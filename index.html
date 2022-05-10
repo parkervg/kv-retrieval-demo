@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html>
+
+
+<head>
+  <title>Key-Value Retrieval Network for Task-Oriented Dialogue</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="static/css/bootstrap.min.css" rel="stylesheet" media="screen">
+  <link rel="stylesheet" href="static/css/scrollsnap.css">
+  <link rel="stylesheet" href="static/css/tooltip.css">
+  <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+  <!--[if lt IE 9]>
+      <script src="../../assets/js/html5shiv.js"></script>
+      <script src="../../assets/js/respond.min.js"></script>
+    <![endif]-->
+</head>
+<style>
+  body {
+    padding-top: 50px;
+  }
+</style>
+
+<body onload="LoadApi()">
+  <div class="navbar navbar-inverse navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="https://parkervg.github.io/">Parker Glenn</a>
+      </div>
+      <!--/.nav-collapse -->
+    </div>
+  </div>
+
+  <div class="jumbotron" style="background-color: #A8D0E6;">
+    <div class="container">
+      <h1> Key-Value Retrieval Network </h1>
+      <p>
+        Welcome! Below is a demo of the Seq2Seq network described in <a href="https://arxiv.org/abs/1705.05414" target="blank_">Key-Value Retrieval Networks for Task-Oriented Dialogue</a>. This 2017 paper describes an end-to-end differentiable
+        Seq2Seq network that
+        is able to interact with an external knowledge base with no explicit representation of dialogue state. Additionally, the paper presents a new multi-turn, multi-domain, task-oriented dialogue dataset.
+      </p>
+      <h3> What is "Multi-Turn, Multi-Domain, Task-Oriented Dialogue"? </h3>
+      That's a lot of hyphens. Let's break it down:
+      <p>
+        <ul>
+          <li>
+            <p style='color:blue !important;'>Multi-Turn:</p> Multiple utterances take place between the user and the system. A single turn would be something like "How are you?", "I am good!".
+          </li>
+          <li>
+            <p style='color:red !important;'>Multi-Domain:</p> The dialogues occur in multiple domains, each with different knoweldge base schemas. Here, we are concerned with the driving, weather, and calendar domains.
+          </li>
+          <li>
+            <p style='color:green !important;'>Task-Oriented:</p> There is a specific goal that the system is trying to achieve. This could be retrieving calendar information ("What time is my doctor's appointment?"), weather information retrieval
+            ("What's the weather in Boston?") or navigation ("Take me to a coffee shop").
+          </li>
+        </ul>
+      </p>
+      <p class="lead"> More info on the KVRET dataset of 3,031 multi-turn dialogues can be found <a href="https://nlp.stanford.edu/blog/a-new-multi-turn-multi-domain-task-oriented-dialogue-dataset/ target=" blank_""> here </a>.
+
+
+        <h3> How do I use this demo? </h3>
+        <p>
+          To interact with the Seq2Seq chatbot, type a question into the text box below, and hit 'Enter'. Or, to sample dialogue from the KVRET test set, hit 'Get Example Dialogue'. To clear the chat and the model's accumulated context, hit 'Clear
+          Chat'. For best results, ask about specific values in the knowledge base table.
+          <br />
+          <br />
+          Check out the code for the API and model training <a href="https://github.com/parkervg/kv-retrieval-net" target="blank_"> here</a>.
+        </p>
+    </div>
+  </div>
+
+
+
+  <div class="jumbotron" id="load-api" style="background-color: #F8E9A1; text-align: center;">
+    <p> Waking up API on Heroku... </p>
+    <div class="loader" id="loader-3">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+  </div>
+  </div>
+
+  <div class="container">
+    <div class="list-group card-columns">
+      <h3> Choose a scenario: </h3>
+      <a class="list-group-item list-group-item-action col-sm-4" href="#!" onclick="StartSession('event')">Calendar &#128197;</a>
+      <a class="list-group-item list-group-item-action col-sm-4" href="#!" onclick="StartSession('poi')">Directions
+        &#128663;</a>
+      <a class="list-group-item list-group-item-action col-sm-4" href="#!" onclick="StartSession('location')">Weather &#x26C5;</a>
+    </div>
+    <br>
+
+    <div class="form-group">
+      <div id="kb-database"> </div>
+      <div id='bodybox'>
+        <div id='chatborder'>
+          <p id="chatlog7" class="chatlog">&nbsp;</p>
+          <p id="chatlog6" class="chatlog">&nbsp;</p>
+          <p id="chatlog5" class="chatlog">&nbsp;</p>
+          <p id="chatlog4" class="chatlog">&nbsp;</p>
+          <p id="chatlog3" class="chatlog">&nbsp;</p>
+          <p id="chatlog2" class="chatlog">&nbsp;</p>
+          <p id="chatlog1" class="chatlog">&nbsp;</p>
+          <input type="text" name="chat" id="chatbox" placeholder="Hi there! Type here to talk to me." onfocus="placeHolder()">
+        </div>
+        <a name="submitButton" class="btn btn-warning btn-sm btn-block" onclick="clearHistory();">Clear Chat</a>
+        <a name="submitButton" class="btn btn-primary btn-sm btn-block" onclick="populateExample();">Get Example Dialogue</a>
+        <br>
+        <br>
+      </div>
+    </div>
+
+
+    <script>
+      var messages = [],
+        lastUserMessage = "", //keeps track of the most recent input string from the user
+        botMessage = "", //var keeps track of what the chatbot is going to say
+        botName = 'KV Retrieval Net', //name of the chatbot
+        talking = false; //when false the speach function doesn't work,
+      session_id = "";
+
+
+      async function newEntry() {
+        //if the message from the user isn't empty then run
+        if (document.getElementById("chatbox").value != "") {
+          //pulls the value from the chatbox ands sets it to lastUserMessage
+          lastUserMessage = document.getElementById("chatbox").value;
+          //sets the chat box to be clear
+          document.getElementById("chatbox").value = "";
+          messages.push(lastUserMessage);
+          //adds the value of the chatbox to the array messages
+          // GetJSONOutput(session_id, lastUserMessage, true).then(data => {
+          //   console.log(data);
+          //   botMessage = data.output;
+          // }).catch(err => console.log(err))
+          let dataJson = await GetJSONOutput(session_id, lastUserMessage, false);
+          botMessage = dataJson.output;
+          //Speech(lastUserMessage);  //says what the user typed outloud
+          //add the chatbot's name and message to the array messages
+          messages.push("<b>" + botName + ":</b> " + botMessage);
+          // says the message using the text to speech function written below
+          Speech(botMessage);
+          //outputs the last few array elements of messages to html
+          for (var i = 1; i < 8; i++) {
+            if (messages[messages.length - i])
+              document.getElementById("chatlog" + i).innerHTML = messages[messages.length - i];
+          }
+        }
+      }
+
+
+      async function populateExample() {
+        let dataJson = await GetExampleDialogue(session_id);
+        console.log(dataJson.output);
+        document.getElementById("chatbox").value = dataJson.output;
+        newEntry();
+      }
+
+      //text to Speech
+      //https://developers.google.com/web/updates/2014/01/Web-apps-that-talk-Introduction-to-the-Speech-Synthesis-API
+      function Speech(say) {
+        if ('speechSynthesis' in window && talking) {
+          var utterance = new SpeechSynthesisUtterance(say);
+          speechSynthesis.speak(utterance);
+        }
+      }
+
+      //runs the keypress() function when a key is pressed
+      document.onkeypress = keyPress;
+      //if the key pressed is 'enter' runs the function newEntry()
+      function keyPress(e) {
+        var x = e || window.event;
+        var key = (x.keyCode || x.which);
+        if (key == 13 || key == 3) {
+          //runs this function when enter is pressed
+          newEntry();
+          // GetJSONOutput(session_id, document.getElementById("chatbox").value, true);
+        }
+      }
+
+      //clears the placeholder text ion the chatbox
+      //this function is set to run when the users brings focus to the chatbox, by clicking on it
+      function placeHolder() {
+        document.getElementById("chatbox").placeholder = "";
+      }
+
+      function LoadApi() {
+        fetch("http://127.0.0.1:8000/is_up/").then(response => response.json())
+          .then(data => {
+            console.log(data);
+            var apiLoader = document.getElementById("load-api");
+            apiLoader.innerHTML = "API is up and ready! &#9989;";
+            return true;
+          })
+      }
+
+      function clearHistory() {
+        messages = [];
+        lastUserMessage = ""; //keeps track of the most recent input string from the user
+        botMessage = ""; //var keeps track of what the chatbot is going to say
+        clearChat();
+      }
+
+      function clearChat() {
+        document.getElementById("chatbox").value = "";
+        chatlogs = document.getElementsByClassName("chatlog");
+        for (let i = 0; i < chatlogs.length; i++) {
+          chatlogs[i].innerHTML = "";
+        }
+        // Calls api to clear aggregate_history, reset turn_num
+        fetch("http://127.0.0.1:8000/clear_history/", {
+          method: "post",
+          "headers": {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            session_id: session_id
+          })
+        }).then(response => response.json())
+      }
+
+      function StartSession(scenario_type) {
+        messages = [];
+        lastUserMessage = ""; //keeps track of the most recent input string from the user
+        botMessage = ""; //var keeps track of what the chatbot is going to say
+        session_id = "";
+        clearChat();
+        // Populates kb-database with html, and fetches session_id
+        fetch("http://127.0.0.1:8000/start_session/", {
+            method: "post",
+            "headers": {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              scenario_type: scenario_type,
+              data_type: "dev"
+            })
+          }).then(response => response.json())
+          .then(data => {
+            session_id = data.session_id;
+            db_html = data.db_html;
+            console.log(session_id);
+            var KBDatabase = document.getElementById("kb-database");
+            KBDatabase.innerHTML = db_html;
+          })
+      };
+
+      async function GetJSONOutput(session_id, text, clear_state) {
+        console.log(session_id);
+        console.log(text);
+        let data = (await fetch("http://127.0.0.1:8000/get_json_prediction/", {
+          method: "post",
+          "headers": {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            session_id: session_id,
+            text: text,
+            clear_state: clear_state
+          })
+        }));
+        let dataJson = data.json();
+        return dataJson;
+      };
+
+
+      async function GetExampleDialogue(session_id) {
+        let data = (await fetch("http://127.0.0.1:8000/get_example_dialogue/", {
+          method: "post",
+          "headers": {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            session_id: session_id,
+          })
+        }));
+        let dataJson = data.json();
+        return dataJson;
+      }
+      // function GetJSONOutput(session_id, text, clear_state) {
+      //   console.log(session_id);
+      //   console.log(text);
+      //   return fetch("http://127.0.0.1:8000/get_json_prediction/", {
+      //       method: "post",
+      //       "headers": {
+      //         'Accept': 'application/json',
+      //         'Content-Type': 'application/json'
+      //       },
+      //       body: JSON.stringify({
+      //         session_id: session_id,
+      //         text: text,
+      //         clear_state: clear_state
+      //       })
+      //     }).then(response => response.json())
+      //     .then(data =>
+      //       return data
+      //       // console.log(data.output)
+      //     );
+      // };
+
+      function GetExampleScript(scriptType) {
+        console.log("Fetching example script...");
+        fetch("https://referent-api.herokuapp.com/get_example_script/", {
+            method: "post",
+            "headers": {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              "script_type": scriptType
+            })
+          }).then(response => response.json())
+          .then(data => {
+            scriptText = data.text;
+            console.log(scriptText);
+            var scriptTextBox = document.getElementById("inputText");
+            scriptTextBox.value = scriptText;
+          })
+      }
+    </script>
+    <script src="static/js/jquery.js"></script>
+    <script src="static/js/popper.min.js"></script>
+    <script src="static/js/bootstrap.min.js"></script>
+    <script src="static/js/tooltip.js"></script>
+
+</body>
+
+</html>
