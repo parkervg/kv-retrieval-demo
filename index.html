@@ -51,7 +51,7 @@
             <p style='color:blue !important;'>Multi-Turn:</p> Multiple utterances take place between the user and the system. A single turn would be something like "How are you?", "I am good!".
           </li>
           <li>
-            <p style='color:red !important;'>Multi-Domain:</p> The dialogues occur in multiple domains, each with different knoweldge base schemas. Here, we are concerned with the driving, weather, and calendar domains.
+            <p style='color:red !important;'>Multi-Domain:</p> The dialogues occur in multiple domains, each with different knowledge base schemas. Here, we are concerned with the driving, weather, and calendar domains.
           </li>
           <li>
             <p style='color:green !important;'>Task-Oriented:</p> There is a specific goal that the system is trying to achieve. This could be retrieving calendar information ("What time is my doctor's appointment?"), weather information retrieval
@@ -284,46 +284,6 @@
         }));
         let dataJson = data.json();
         return dataJson;
-      }
-      // function GetJSONOutput(session_id, text, clear_state) {
-      //   console.log(session_id);
-      //   console.log(text);
-      //   return fetch("http://127.0.0.1:8000/get_json_prediction/", {
-      //       method: "post",
-      //       "headers": {
-      //         'Accept': 'application/json',
-      //         'Content-Type': 'application/json'
-      //       },
-      //       body: JSON.stringify({
-      //         session_id: session_id,
-      //         text: text,
-      //         clear_state: clear_state
-      //       })
-      //     }).then(response => response.json())
-      //     .then(data =>
-      //       return data
-      //       // console.log(data.output)
-      //     );
-      // };
-
-      function GetExampleScript(scriptType) {
-        console.log("Fetching example script...");
-        fetch("https://kv-retrieval-net.herokuapp.com/get_example_script/", {
-            method: "post",
-            "headers": {
-              'Accept': 'application/json',
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              "script_type": scriptType
-            })
-          }).then(response => response.json())
-          .then(data => {
-            scriptText = data.text;
-            console.log(scriptText);
-            var scriptTextBox = document.getElementById("inputText");
-            scriptTextBox.value = scriptText;
-          })
       }
     </script>
     <script src="static/js/jquery.js"></script>
