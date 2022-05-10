@@ -1,3 +1,3 @@
-# discourse-referent-demo 
+# kv-retrieval-demo
 
-Up at https://parkervg.github.io/discourse-referent-demo/
+Up at https://parkervg.github.io/kv-retrieval-demo/
