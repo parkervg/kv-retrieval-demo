@@ -189,7 +189,7 @@
       }
 
       function LoadApi() {
-        fetch("http://127.0.0.1:8000/is_up/").then(response => response.json())
+        fetch("https://kv-retrieval-net.herokuapp.com/is_up/").then(response => response.json())
           .then(data => {
             console.log(data);
             var apiLoader = document.getElementById("load-api");
@@ -212,7 +212,7 @@
           chatlogs[i].innerHTML = "";
         }
         // Calls api to clear aggregate_history, reset turn_num
-        fetch("http://127.0.0.1:8000/clear_history/", {
+        fetch("https://kv-retrieval-net.herokuapp.com/clear_history/", {
           method: "post",
           "headers": {
             'Accept': 'application/json',
@@ -231,7 +231,7 @@
         session_id = "";
         clearChat();
         // Populates kb-database with html, and fetches session_id
-        fetch("http://127.0.0.1:8000/start_session/", {
+        fetch("https://kv-retrieval-net.herokuapp.com/start_session/", {
             method: "post",
             "headers": {
               'Accept': 'application/json',
@@ -254,7 +254,7 @@
       async function GetJSONOutput(session_id, text, clear_state) {
         console.log(session_id);
         console.log(text);
-        let data = (await fetch("http://127.0.0.1:8000/get_json_prediction/", {
+        let data = (await fetch("https://kv-retrieval-net.herokuapp.com/get_json_prediction/", {
           method: "post",
           "headers": {
             'Accept': 'application/json',
@@ -272,7 +272,7 @@
 
 
       async function GetExampleDialogue(session_id) {
-        let data = (await fetch("http://127.0.0.1:8000/get_example_dialogue/", {
+        let data = (await fetch("https://kv-retrieval-net.herokuapp.com/get_example_dialogue/", {
           method: "post",
           "headers": {
             'Accept': 'application/json',
@@ -308,7 +308,7 @@
 
       function GetExampleScript(scriptType) {
         console.log("Fetching example script...");
-        fetch("https://referent-api.herokuapp.com/get_example_script/", {
+        fetch("https://kv-retrieval-net.herokuapp.com/get_example_script/", {
             method: "post",
             "headers": {
               'Accept': 'application/json',
