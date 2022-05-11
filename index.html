@@ -190,11 +190,12 @@
       }
 
       function LoadApi() {
-        fetch("https://kv-retrieval-net.herokuapp.com/is_up/").then(response => response.json())
+        fetch("http://127.0.0.1:8000/is_up/").then(response => response.json())
           .then(data => {
             console.log(data);
             var apiLoader = document.getElementById("load-api");
             apiLoader.innerHTML = "API is up and ready! &#9989;";
+            StartSession("event");
             return true;
           })
       }
@@ -213,7 +214,7 @@
           chatlogs[i].innerHTML = "";
         }
         // Calls api to clear aggregate_history, reset turn_num
-        fetch("https://kv-retrieval-net.herokuapp.com/clear_history/", {
+        fetch("http://127.0.0.1:8000/clear_history/", {
           method: "post",
           "headers": {
             'Accept': 'application/json',
@@ -226,13 +227,14 @@
       }
 
       function StartSession(scenario_type) {
+        clearChat();
+        deleteCache();
         messages = [];
         lastUserMessage = ""; //keeps track of the most recent input string from the user
         botMessage = ""; //var keeps track of what the chatbot is going to say
         session_id = "";
-        clearChat();
         // Populates kb-database with html, and fetches session_id
-        fetch("https://kv-retrieval-net.herokuapp.com/start_session/", {
+        fetch("http://127.0.0.1:8000/start_session/", {
             method: "post",
             "headers": {
               'Accept': 'application/json',
@@ -252,10 +254,23 @@
           })
       };
 
+      function deleteCache() {
+        fetch("http://127.0.0.1:8000/delete_cache/", {
+          method: "post",
+          "headers": {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            session_id: session_id
+          })
+        })
+      }
+
       async function GetJSONOutput(session_id, text, clear_state) {
         console.log(session_id);
         console.log(text);
-        let data = (await fetch("https://kv-retrieval-net.herokuapp.com/get_json_prediction/", {
+        let data = (await fetch("http://127.0.0.1:8000/get_json_prediction/", {
           method: "post",
           "headers": {
             'Accept': 'application/json',
@@ -273,7 +288,7 @@
 
 
       async function GetExampleDialogue(session_id) {
-        let data = (await fetch("https://kv-retrieval-net.herokuapp.com/get_example_dialogue/", {
+        let data = (await fetch("http://127.0.0.1:8000/get_example_dialogue/", {
           method: "post",
           "headers": {
             'Accept': 'application/json',
